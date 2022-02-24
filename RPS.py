@@ -7,6 +7,11 @@ from pathlib import Path
 from keras.models import load_model
 import time
 
+
+##########################################################################################################
+##################### ROCK PAPER SCISSORS INITIAL FUNCTION ###############################################
+##########################################################################################################
+
 def rockPaperSciss(tlimit = 10):
     model = load_model(Path(os.getcwd(), 'converted_keras', 'keras_model.h5'))
     cap = cv2.VideoCapture(0)
@@ -26,6 +31,20 @@ def rockPaperSciss(tlimit = 10):
         prob_lim = 0.5
         choice_rps = np.random.choice(cpu_counter, size=1, replace=True)
         pred_list = [prediction[0][0], prediction[0][1], prediction[0][2], prediction[0][3]]
+        ''' 
+        For code below:
+        1) Outer if condition in major loop checks which index yields to highest probability 
+        value and whether such a probabilty is greater than the value specified by prob_lim
+        2) Inner if condition compares randomly chosen computer selection from choices rock,
+        paper scissors and compares against the selection made by player as inferred by machine.
+        3) Should player win 1 is appended list instantiated on each iteration of while loop, should
+        computer win -1 is appended and should there be a draw or player inferred to have done nothing
+        0 is appended
+        4) The values within the instantiated list are summed and should summed values be greater than
+        0 player deduced to have won most round, should summed values be less than 0 computer inferred
+        to have won most round and should sum be equal to zero both player and machine have won equal 
+        number of rounds
+        '''
         if (pred_list.index(max(pred_list)) == 0) and (prediction[0][0] > prob_lim):
             if choice_rps == 'Rock':
                 print(f'Computer picked {choice_rps[0]} and you picked Rock ----> Draw')
@@ -84,8 +103,13 @@ def rockPaperSciss(tlimit = 10):
         print('DRAW')
     return sum(win_loss)
 
+##########################################################################################################
+##################### FIRST TO THREE/ BEST OF THREE RPS FUNCTION #########################################
+##########################################################################################################
+
 def tournamentWinner(type = 'best_off',rounds = 3, round_len = 15):
     counter = 0
+    # Code below for when best of option selected for type of tournament i.e. number of rounds fixed 
     if type == 'best_off':
         for i in range(3):
             winner = rockPaperSciss(round_len)
@@ -102,6 +126,8 @@ def tournamentWinner(type = 'best_off',rounds = 3, round_len = 15):
         else:
             print(counter)
             print('Draw')
+    # Code below for when 'first_to' option is selected for type of tournament i.e. tournament ends when either one
+    # of computer or player wins number of games specified in rounds argument        
     elif type == 'first_to':
         you = 0
         cpu = 0
