@@ -122,4 +122,4 @@ def tournamentWinner(type = 'best_off',rounds = 3, round_len = 15):
         
     
 
-tournamentWinner(type='first_to')
+tournamentWinner(type='first_to',  rounds=2, round_len=10)
