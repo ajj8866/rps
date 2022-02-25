@@ -7,6 +7,35 @@ from pathlib import Path
 from keras.models import load_model
 import time
 
+def load_labels(path):
+    f = open(path, 'r')
+    lines = f.readlines()
+    labels = []
+    for line in lines:
+        labels.append(line.split(' ')[1].strip('\n'))
+    return labels
+
+label_path = Path(Path.cwd(),'converted_keras', 'labels.txt')
+labels = load_labels(label_path)
+print(labels)
+
+# This function proportionally resizes the image from your webcam to 224 pixels high
+def image_resize(image, height, inter = cv2.INTER_AREA):
+    dim = None
+    (h, w) = image.shape[:2]
+    r = height / float(h)
+    dim = (int(w * r), height)
+    resized = cv2.resize(image, dim, interpolation = inter)
+    return resized
+
+# this function crops to the center of the resize image
+def cropTo(img):
+    size = 224
+    height, width = img.shape[:2]
+
+    sideCrop = (width - 224) // 2
+    return img[:,sideCrop:(width - sideCrop)]
+
 
 ##########################################################################################################
 ##################### ROCK PAPER SCISSORS INITIAL FUNCTION ###############################################
@@ -146,6 +175,8 @@ def tournamentWinner(type = 'best_off',rounds = 3, round_len = 15):
             print('You lose :(')
         print('#'*30)
         
-    
+#######################################################################################################################
+# CALLING FUNCTIONS 
 
+rockPaperSciss(tlimit=15)
 tournamentWinner(type='first_to',  rounds=2, round_len=10)
