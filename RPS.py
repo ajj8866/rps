@@ -7,6 +7,39 @@ from pathlib import Path
 from keras.models import load_model
 import time
 
+
+np.set_printoptions(suppress=True)
+
+def load_labels(path):
+    f = open(path, 'r')
+    lines = f.readlines()
+    labels = []
+    for line in lines:
+        labels.append(line.split(' ')[1].strip('\n'))
+    return labels
+
+label_path = Path(Path.cwd(), 'converted_keras','labels.txt')
+labels = load_labels(label_path)
+print(labels)
+
+# This function proportionally resizes the image from your webcam to 224 pixels high
+def image_resize(image, height, inter = cv2.INTER_AREA):
+    dim = None
+    (h, w) = image.shape[:2]
+    r = height / float(h)
+    dim = (int(w * r), height)
+    resized = cv2.resize(image, dim, interpolation = inter)
+    return resized
+
+# this function crops to the center of the resize image
+def cropTo(img):
+    size = 224
+    height, width = img.shape[:2]
+
+    sideCrop = (width - 224) // 2
+    return img[:,sideCrop:(width - sideCrop)]
+
+
 def rockPaperSciss(tlimit = 10):
     model = load_model(Path(os.getcwd(), 'converted_keras', 'keras_model.h5'))
     cap = cv2.VideoCapture(0)
@@ -15,62 +48,74 @@ def rockPaperSciss(tlimit = 10):
     start_time = time.time()
     win_loss = []
     while True:
+        t = 3
+        print('Next round starting in...')
+        while t:
+            mins, secs = divmod(t, 60)
+            timer_cd = f'{mins:0>2d}:{secs:0>2d}'
+            print(timer_cd)            
+            time.sleep(1)
+            t = t - 1 
         ret, frame = cap.read()
-        resized_frame = cv2.resize(frame, (224, 224), interpolation= cv2.INTER_AREA)
-        image_np = np.array(resized_frame)
-        normalized_image = (image_np.astype(np.float32) / 127) - 1
-        data[0] = normalized_image
-        prediction = model.predict(data)
-        print(prediction[0])
-        cv2.imshow('frame', frame)
-        prob_lim = 0.5
-        choice_rps = np.random.choice(cpu_counter, size=1, replace=True)
-        pred_list = [prediction[0][0], prediction[0][1], prediction[0][2], prediction[0][3]]
-        if (pred_list.index(max(pred_list)) == 0) and (prediction[0][0] > prob_lim):
-            if choice_rps == 'Rock':
-                print(f'Computer picked {choice_rps[0]} and you picked Rock ----> Draw')
-                win_loss.append(0)
-            elif choice_rps == 'Paper':
-                print(f'Computer picked {choice_rps[0]} and you picked Rock ----> You Lose :(')
-                win_loss.append(-1)
-            elif choice_rps == 'Scissor':
-                print(f'Computer picked {choice_rps[0]} and you picked Rock ----> You Win!')
-                win_loss.append(1)
+        if ret:
+            frame = image_resize(frame, height=224)
+            frame = cropTo(frame)
+            frame = cv2.flip(frame, 1)
+            resized_frame = cv2.resize(frame, (224, 224), interpolation= cv2.INTER_AREA)
+            image_np = np.array(resized_frame)
+            normalized_image = (image_np.astype(np.float32) / 127) - 1
+            data[0] = normalized_image
+            prediction = model.predict(data)
+            print(prediction[0])
+            cv2.imshow('frame', frame)
+            prob_lim = 0.5
+            choice_rps = np.random.choice(cpu_counter, size=1, replace=True)
+            pred_list = [prediction[0][0], prediction[0][1], prediction[0][2], prediction[0][3]]
+            if (pred_list.index(max(pred_list)) == 0) and (prediction[0][0] > prob_lim):
+                if choice_rps == 'Rock':
+                    print(f'Computer picked {choice_rps[0]} and you picked Rock ----> Draw')
+                    win_loss.append(0)
+                elif choice_rps == 'Paper':
+                    print(f'Computer picked {choice_rps[0]} and you picked Rock ----> You Lose :(')
+                    win_loss.append(-1)
+                elif choice_rps == 'Scissor':
+                    print(f'Computer picked {choice_rps[0]} and you picked Rock ----> You Win!')
+                    win_loss.append(1)
+                else:
+                    print('...do something')
+                    win_loss.append(0)
+            elif (pred_list.index(max(pred_list)) == 1) and (prediction[0][1] > prob_lim):
+                if choice_rps == 'Rock':
+                    print(f'Computer picked {choice_rps[0]} and you picked Paper ----> You win!')
+                    win_loss.append(1)
+                elif choice_rps == 'Paper':
+                    print(f'Computer picked {choice_rps[0]} and you picked Paper ----> Draw')
+                    win_loss.append(0)
+                elif choice_rps == 'Scissor':
+                    print(f'Computer picked {choice_rps[0]} and you picked Paper ----> You Lose :(')
+                    win_loss.append(-1)
+                else:
+                    print('...do something')
+                    win_loss.apend(0)
+            elif (pred_list.index(max(pred_list)) == 2) and (prediction[0][2] > prob_lim):
+                if choice_rps == 'Rock':
+                    print(f'Computer picked {choice_rps[0]} and you picked Scissor ----> You Lose :(')
+                    win_loss.append(-1)
+                elif choice_rps == 'Paper':
+                    print(f'Computer picked {choice_rps[0]} and you picked Scissor ----> You Win!')
+                    win_loss.append(1)
+                elif choice_rps == 'Scissor':
+                    print(f'Computer picked {choice_rps[0]} and you picked Scissor ----> Draw')
+                    win_loss.append(0)
+                else:
+                    print('...do something')
+                    win_loss.append(0)
             else:
                 print('...do something')
                 win_loss.append(0)
-        elif (pred_list.index(max(pred_list)) == 1) and (prediction[0][1] > prob_lim):
-            if choice_rps == 'Rock':
-                print(f'Computer picked {choice_rps[0]} and you picked Paper ----> You win!')
-                win_loss.append(1)
-            elif choice_rps == 'Paper':
-                print(f'Computer picked {choice_rps[0]} and you picked Paper ----> Draw')
-                win_loss.append(0)
-            elif choice_rps == 'Scissor':
-                print(f'Computer picked {choice_rps[0]} and you picked Paper ----> You Lose :(')
-                win_loss.append(-1)
-            else:
-                print('...do something')
-                win_loss.apend(0)
-        elif (pred_list.index(max(pred_list)) == 2) and (prediction[0][2] > prob_lim):
-            if choice_rps == 'Rock':
-                print(f'Computer picked {choice_rps[0]} and you picked Scissor ----> You Lose :(')
-                win_loss.append(-1)
-            elif choice_rps == 'Paper':
-                print(f'Computer picked {choice_rps[0]} and you picked Scissor ----> You Win!')
-                win_loss.append(1)
-            elif choice_rps == 'Scissor':
-                print(f'Computer picked {choice_rps[0]} and you picked Scissor ----> Draw')
-                win_loss.append(0)
-            else:
-                print('...do something')
-                win_loss.append(0)
-        else:
-            print('...do something')
-            win_loss.append(0)
 
-        if cv2.waitKey(1) & 0xFF == ord('q') or (time.time() - start_time > tlimit):
-            break
+            if cv2.waitKey(1) & 0xFF == ord('q') or (time.time() - start_time > tlimit):
+                break
         
     cap.release()
     cv2.destroyAllWindows()
